@@ -1,0 +1,36 @@
+
+name: SQL CI
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: rootpass
+          MYSQL_DATABASE: ecomm
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -prootpass"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Wait for MySQL
+        run: sleep 30
+
+      - name: Load schema
+        run: mysql -h 127.0.0.1 -P 3306 -uroot -prootpass < sql/schema.sql
+
+      - name: Load data
+        run: mysql -h 127.0.0.1 -P 3306 -uroot -prootpass ecomm < sql/data.sql
+
+      - name: Run queries
+        run: mysql -h 127.0.0.1 -P 3306 -uroot -prootpass ecomm < sql/answers.sql
